@@ -1,6 +1,6 @@
 # ServiceDesk.OnPrem.Requests
 
-A PowerShell module for the [ManageEngine ServiceDesk Plus On-Prem]() REST API — Requests surface.
+A PowerShell module for the [ManageEngine ServiceDesk Plus On-Prem](https://www.manageengine.com/products/service-desk/on-premises/) REST API — Requests surface.
 
 Provides full CRUD coverage for requests, notes, tasks, worklogs, approval levels, and approvals according to Zoho's API reference collection. Authentication uses technician or integration keys.
 
@@ -12,7 +12,7 @@ Provides full CRUD coverage for requests, notes, tasks, worklogs, approval level
 
 - PowerShell 7.0 or later
 - ManageEngine ServiceDesk Plus on-premises (with REST API enabled)
-- A Technician API key (generate in **Admin → Technicians → API Key**)
+- A Technician API key
 
 ## Installation
 
@@ -31,7 +31,7 @@ You are free to pass your technician or integration key however you please, but 
 
 ```powershell
 # Connect (API key stored as SecureString)
-$key = Get-Secret -Name 'SdpTechnicianKey' -AsPlainText 
+$key = Get-Secret -Name 'SdpTechnicianKey' 
 Connect-SDPService -BaseUri 'https://sdp.corp.local:8080' -TechnicianKey $key
 
 # List open requests
