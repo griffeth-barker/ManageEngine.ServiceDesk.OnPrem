@@ -1,3 +1,5 @@
+![](assets/manageengine-servicedesk-psmodules-logo-x256-nobg.png)
+
 # ManageEngine.ServiceDesk.OnPrem
 
 A PowerShell module family for the [ManageEngine ServiceDesk Plus On-Prem](https://www.manageengine.com/products/service-desk/on-premises/) REST API.
