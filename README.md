@@ -1,12 +1,34 @@
-# ServiceDesk.OnPrem.Requests
+# ManageEngine.ServiceDesk.OnPrem
 
-A PowerShell module for the [ManageEngine ServiceDesk Plus On-Prem](https://www.manageengine.com/products/service-desk/on-premises/) REST API — Requests surface.
-
-Provides full CRUD coverage for requests, notes, tasks, worklogs, approval levels, and approvals according to Zoho's API reference collection. Authentication uses technician or integration keys.
+A PowerShell module family for the [ManageEngine ServiceDesk Plus On-Prem](https://www.manageengine.com/products/service-desk/on-premises/) REST API.
 
 > **DISCLAIMER:**  
 > This module is not affiliated with nor supported by Zoho/ManageEngine.
 > This code should be considered experimental. You should understand the code that you choose to run on your systems. This code should not be considered production ready as long as this banner is present and/or the module version is < 1.0.0.
+
+## Modules
+
+| Module | Description |
+|---|---|
+| `ManageEngine.ServiceDesk.OnPrem` | Umbrella — installs all sub-modules |
+| `ManageEngine.ServiceDesk.OnPrem.Core` | Authentication, session management, HTTP transport |
+| `ManageEngine.ServiceDesk.OnPrem.Requests` | Requests, notes, tasks, worklogs, resolutions, approvals |
+
+Install the umbrella module to get everything, then import only the sub-modules you need:
+
+```powershell
+# Install everything
+Install-PSResource -Name 'ManageEngine.ServiceDesk.OnPrem' -Repository PSGallery
+
+# Import only what you need — Core is loaded automatically as a dependency
+Import-Module ManageEngine.ServiceDesk.OnPrem.Requests
+```
+
+Or install a sub-module directly (Core will be pulled in automatically):
+
+```powershell
+Install-PSResource -Name 'ManageEngine.ServiceDesk.OnPrem.Requests' -Repository PSGallery
+```
 
 ## Requirements
 
@@ -14,24 +36,11 @@ Provides full CRUD coverage for requests, notes, tasks, worklogs, approval level
 - ManageEngine ServiceDesk Plus on-premises (with REST API enabled)
 - A Technician API key
 
-## Installation
-
-```powershell
-# Via PowerShell Gallery
-Install-PSResource -Name 'ServiceDesk.OnPrem.Requests' -Repository PSGallery
-
-# Via Download
-# Download the project and expand the archive, then run
-Import-Module ./ServiceDesk.OnPrem.Requests/ServiceDesk.OnPrem.Requests.psd1
-```
-
 ## Quick start
 
-You are free to pass your technician or integration key however you please, but I recommend using the SecretsManagement module:
-
 ```powershell
-# Connect (API key stored as SecureString)
-$key = Get-Secret -Name 'SdpTechnicianKey' 
+# Connect (recommended: store your key via Microsoft.PowerShell.SecretManagement)
+$key = Get-Secret -Name 'SdpTechnicianKey'
 Connect-SDPService -BaseUri 'https://sdp.corp.local:8080' -TechnicianKey $key
 
 # List open requests
@@ -46,7 +55,7 @@ New-SDPRequest -Subject 'Cannot access VPN' -RequesterName 'Jane Smith' -Priorit
 # Update a request
 Set-SDPRequest -Id '12345' -TechnicianName 'Bob Jones' -StatusName 'In Progress'
 
-# Pipeline: close all requests resolved more than 30 days ago
+# Pipeline: close all resolved requests
 Get-SDPRequest -Filter @(@{ field = 'status.name'; condition = 'eq'; value = 'Resolved' }) -All |
     Set-SDPRequest -StatusName 'Closed'
 
@@ -59,10 +68,8 @@ New-SDPRequestWorklog -RequestId '12345' -TimeSpentHours '1' -TimeSpentMinutes '
 # Set a resolution
 New-SDPRequestResolution -RequestId '12345' -Content 'Reset credentials. Issue resolved.'
 
-# View pending approvals
+# View and act on pending approvals
 Get-SDPApproval
-
-# Approve / deny
 Approve-SDPApproval -RequestId '12345' -LevelNumber 1 -ApprovalId '1' -Comments 'Approved.'
 Deny-SDPApproval   -RequestId '12345' -LevelNumber 1 -ApprovalId '1' -Comments 'Missing justification.'
 
@@ -70,22 +77,29 @@ Deny-SDPApproval   -RequestId '12345' -LevelNumber 1 -ApprovalId '1' -Comments '
 Disconnect-SDPService
 ```
 
-## Available Commands
+## Available commands
+
+### Core (`ManageEngine.ServiceDesk.OnPrem.Core`)
+
+| Command | Description |
+|---|---|
+| `Connect-SDPService` | Authenticate to an SDP instance |
+| `Disconnect-SDPService` | Clear the active session |
+| `Get-SDPSession` | Return the active connection object |
+| `Invoke-SDPRestMethod` | Send a raw authenticated request to the API |
+
+### Requests (`ManageEngine.ServiceDesk.OnPrem.Requests`)
 
 | Noun | Get | New | Set | Remove |
 |---|---|---|---|---|
-| SDPRequest | ✓ | ✓ | ✓ | ✓ |
-| SDPRequestNote | ✓ | ✓ | ✓ | ✓ |
-| SDPRequestTask | ✓ | ✓ | ✓ | ✓ |
-| SDPRequestWorklog | ✓ | ✓ | ✓ | ✓ |
-| SDPRequestResolution | ✓ | ✓ | — | — |
-| SDPApproval | ✓ | — | — | — |
+| `SDPRequest` | ✓ | ✓ | ✓ | ✓ |
+| `SDPRequestNote` | ✓ | ✓ | ✓ | ✓ |
+| `SDPRequestTask` | ✓ | ✓ | ✓ | ✓ |
+| `SDPRequestWorklog` | ✓ | ✓ | ✓ | ✓ |
+| `SDPRequestResolution` | ✓ | ✓ | — | — |
+| `SDPApproval` | ✓ | — | — | — |
 
-Additional: `Connect-SDPService`, `Disconnect-SDPService`, `Approve-SDPApproval`, `Deny-SDPApproval`
-
-## Documentation
-
-Full cmdlet reference: [docs/en-US/](docs/en-US/) (generated via PlatyPS — run `./build.ps1 -Task Docs` first).
+Additional: `Approve-SDPApproval`, `Deny-SDPApproval`
 
 ## Multi-portal installs
 
@@ -97,8 +111,18 @@ Connect-SDPService -BaseUri 'https://sdp.corp.local' -TechnicianKey $key -Portal
 
 The default portal ID is `1`.
 
+## Self-signed certificates
+
+Pass `-SkipCertificateCheck` to bypass SSL validation for instances with untrusted certificates:
+
+```powershell
+Connect-SDPService -BaseUri 'https://sdp.corp.local' -TechnicianKey $key -SkipCertificateCheck
+```
+
+## Documentation
+
+Full cmdlet reference is generated via platyPS. Run `./build.ps1 -Task Docs` to produce or update the Markdown help under `docs/`.
+
 ## Contributing
 
 See [CONTRIBUTING.md](CONTRIBUTING.md).
-
-

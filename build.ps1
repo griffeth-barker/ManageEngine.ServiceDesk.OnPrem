@@ -3,20 +3,38 @@
 param(
     [Parameter()]
     [ValidateSet('All', 'Docs', 'Test', 'IntegrationTest', 'Package')]
-    [string]$Task = 'All'
+    [string]$Task = 'All',
+
+    [Parameter()]
+    [ValidateSet('Core', 'Requests', 'All')]
+    [string]$Module = 'All',
+
+    [Parameter()]
+    [switch]$SkipCertificateCheck
 )
 
 $ErrorActionPreference = 'Stop'
 
-$moduleName  = 'ServiceDesk.OnPrem.Requests'
-$moduleRoot  = Join-Path $PSScriptRoot $moduleName
-$manifestPath = Join-Path $moduleRoot "$moduleName.psd1"
-$docsPath    = Join-Path $PSScriptRoot 'docs' 'en-US'
-$helpOutPath = Join-Path $moduleRoot 'en-US'
-$testsPath   = Join-Path $PSScriptRoot 'tests'
-$distPath    = Join-Path $PSScriptRoot 'dist'
+$repoRoot   = $PSScriptRoot
+$modulesDir = Join-Path $repoRoot 'modules'
+$testsDir   = Join-Path $repoRoot 'tests'
+$distDir    = Join-Path $repoRoot 'dist'
+
+$allModules = @(
+    'ManageEngine.ServiceDesk.OnPrem.Core'
+    'ManageEngine.ServiceDesk.OnPrem.Requests'
+    'ManageEngine.ServiceDesk.OnPrem'
+)
+
+$targetModules = switch ($Module) {
+    'Core'     { @('ManageEngine.ServiceDesk.OnPrem.Core') }
+    'Requests' { @('ManageEngine.ServiceDesk.OnPrem.Core', 'ManageEngine.ServiceDesk.OnPrem.Requests') }
+    'All'      { $allModules }
+}
 
 function Invoke-BuildDocs {
+    param([string[]]$Modules)
+
     Write-Host '[Docs] Generating documentation...' -ForegroundColor Cyan
 
     if (-not (Get-Module -ListAvailable -Name platyPS)) {
@@ -24,19 +42,26 @@ function Invoke-BuildDocs {
     }
 
     Import-Module platyPS -Force
-    Import-Module $manifestPath -Force
 
-    New-Item -ItemType Directory -Path $docsPath   -Force | Out-Null
-    New-Item -ItemType Directory -Path $helpOutPath -Force | Out-Null
+    # Meta module has no cmdlets; skip it
+    $docModules = $Modules | Where-Object { $_ -ne 'ManageEngine.ServiceDesk.OnPrem' }
 
-    $existingDocs = Get-ChildItem -Path $docsPath -Filter '*.md' -ErrorAction SilentlyContinue
-    if ($existingDocs) {
-        Update-MarkdownHelp -Path $docsPath -Force | Out-Null
-    } else {
-        New-MarkdownHelp -Module $moduleName -OutputFolder $docsPath -Force | Out-Null
+    foreach ($moduleName in $docModules) {
+        $manifestPath = Join-Path $modulesDir $moduleName "$moduleName.psd1"
+        $docsPath     = Join-Path $repoRoot 'docs' $moduleName 'en-US'
+        $helpOutPath  = Join-Path $modulesDir $moduleName 'en-US'
+
+        Import-Module $manifestPath -Force
+
+        New-Item -ItemType Directory -Path $docsPath   -Force | Out-Null
+        New-Item -ItemType Directory -Path $helpOutPath -Force | Out-Null
+
+        New-MarkdownHelp -Module $moduleName -OutputFolder $docsPath -Force
+
+        New-ExternalHelp -Path $docsPath -OutputPath $helpOutPath -Force | Out-Null
+
+        Write-Host "[Docs]   $moduleName done." -ForegroundColor Green
     }
-
-    New-ExternalHelp -Path $docsPath -OutputPath $helpOutPath -Force | Out-Null
 
     Write-Host '[Docs] Done.' -ForegroundColor Green
 }
@@ -49,12 +74,12 @@ function Invoke-BuildTest {
     }
 
     $config = New-PesterConfiguration
-    $config.Run.Path             = $testsPath
-    $config.Run.PassThru         = $true
-    $config.Filter.ExcludeTag    = @('Integration')
-    $config.Output.Verbosity     = 'Detailed'
-    $config.TestResult.Enabled   = $true
-    $config.TestResult.OutputPath = Join-Path $PSScriptRoot 'test-results.xml'
+    $config.Run.Path              = $testsDir
+    $config.Run.PassThru          = $true
+    $config.Filter.ExcludeTag     = @('Integration')
+    $config.Output.Verbosity      = 'Detailed'
+    $config.TestResult.Enabled    = $true
+    $config.TestResult.OutputPath = Join-Path $repoRoot 'test-results.xml'
 
     $result = Invoke-Pester -Configuration $config
 
@@ -66,14 +91,18 @@ function Invoke-BuildTest {
 }
 
 function Invoke-BuildIntegrationTest {
+    param([switch]$SkipCertificateCheck)
+
     Write-Host '[IntegrationTest] Running integration tests...' -ForegroundColor Cyan
 
     if (-not $env:SDP_BASE_URI) {
         throw 'SDP_BASE_URI environment variable is required for integration tests.'
     }
 
+    $env:SDP_SKIP_CERTIFICATE_CHECK = if ($SkipCertificateCheck) { '1' } else { '' }
+
     $config = New-PesterConfiguration
-    $config.Run.Path         = $testsPath
+    $config.Run.Path         = $testsDir
     $config.Run.PassThru     = $true
     $config.Filter.Tag       = @('Integration')
     $config.Output.Verbosity = 'Detailed'
@@ -88,25 +117,32 @@ function Invoke-BuildIntegrationTest {
 }
 
 function Invoke-BuildPackage {
-    Write-Host '[Package] Creating distribution package...' -ForegroundColor Cyan
+    param([string[]]$Modules)
 
-    $version = (Import-PowerShellDataFile $manifestPath).ModuleVersion
-    New-Item -ItemType Directory -Path $distPath -Force | Out-Null
+    Write-Host '[Package] Creating distribution packages...' -ForegroundColor Cyan
+    New-Item -ItemType Directory -Path $distDir -Force | Out-Null
 
-    $zipPath = Join-Path $distPath "$moduleName.$version.zip"
-    Compress-Archive -Path $moduleRoot -DestinationPath $zipPath -Force
+    foreach ($moduleName in $Modules) {
+        $moduleDir    = Join-Path $modulesDir $moduleName
+        $manifestPath = Join-Path $moduleDir "$moduleName.psd1"
+        $version      = (Import-PowerShellDataFile $manifestPath).ModuleVersion
+        $zipPath      = Join-Path $distDir "$moduleName.$version.zip"
 
-    Write-Host "[Package] Created $zipPath" -ForegroundColor Green
+        Compress-Archive -Path $moduleDir -DestinationPath $zipPath -Force
+        Write-Host "[Package]   $moduleName $version → $zipPath" -ForegroundColor Green
+    }
+
+    Write-Host '[Package] Done.' -ForegroundColor Green
 }
 
 switch ($Task) {
-    'Docs'            { Invoke-BuildDocs }
+    'Docs'            { Invoke-BuildDocs -Modules $targetModules }
     'Test'            { Invoke-BuildTest }
-    'IntegrationTest' { Invoke-BuildIntegrationTest }
-    'Package'         { Invoke-BuildPackage }
+    'IntegrationTest' { Invoke-BuildIntegrationTest -SkipCertificateCheck:$SkipCertificateCheck }
+    'Package'         { Invoke-BuildPackage -Modules $targetModules }
     'All' {
-        Invoke-BuildDocs
+        Invoke-BuildDocs -Modules $targetModules
         Invoke-BuildTest
-        Invoke-BuildPackage
+        Invoke-BuildPackage -Modules $targetModules
     }
 }
