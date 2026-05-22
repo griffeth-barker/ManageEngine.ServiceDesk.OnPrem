@@ -1,5 +1,7 @@
 # Contributing
 
+Development `ManageEngine.ServiceDesk.OnPrem` and its sub-modules is based on the API reference collection available [here](https://www.postman.com/servicedeskplus/servicedesk-plus-api/overview?sideView=agentMode). The ultimate goal is 100% coverage of the API specification in a manner that users of the modules can consistently rely upon.
+
 ## Prerequisites
 
 ```powershell
