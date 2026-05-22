@@ -88,9 +88,121 @@ tests/
 5. Create a corresponding docs folder at `docs/ManageEngine.ServiceDesk.OnPrem.<Name>/en-US/`
 6. Create a test file at `tests/ManageEngine.ServiceDesk.OnPrem.<Name>.Tests.ps1`
 
-## Pull request guidelines
+## Branching
 
-- Keep PRs focused — one feature or fix per PR
-- New public functions require comment-based help and at least one unit test
-- Run `./build.ps1` (all tasks) before submitting
-- Use past-tense commit messages (e.g. "Added Get-SDPRequestResolution")
+`main` is the stable, always-releasable branch. Direct commits to `main` are not allowed; all changes go through a pull request.
+
+### Branch naming
+
+| Prefix | Use for |
+|---|---|
+| `feature/` | New cmdlets, new sub-modules, new capabilities |
+| `fix/` | Bug fixes |
+| `chore/` | Maintenance — dependency updates, CI changes, doc-only edits |
+
+For changes scoped to a single sub-module, include the module slug after the prefix so it is obvious which module a branch touches:
+
+```
+feature/requests/get-sdprequeststatus
+fix/core/invoke-sdprestmethod-timeout
+chore/requests/update-pester-config
+```
+
+For changes that touch multiple modules or the umbrella module, omit the slug:
+
+```
+feature/add-assets-module
+chore/update-all-copyright-headers
+```
+
+## Pull requests
+
+### Target branch
+
+All PRs target `main`.
+
+### Title format
+
+Prefix the title with the affected module in square brackets, then a past-tense description:
+
+```
+[Core] Added retry logic to Invoke-SDPRestMethod
+[Requests] Fixed worklog date serialization for non-UTC timezones
+[Requests] Added Get-SDPRequestStatus
+[All] Updated copyright year to 2027
+```
+
+Use `[All]` when the change spans more than one module.
+
+### Checklist before opening a PR
+
+1. Run `./build.ps1` (all tasks pass)
+2. New public functions have comment-based help and at least one Pester unit test
+3. Version numbers bumped as needed (see **Versioning** below)
+4. `RequiredModules` constraints updated in any dependent `.psd1` files if a sub-module version changed
+5. PR description notes which modules are affected and summarises any version changes
+
+### PR description template
+
+```
+## What changed
+<bullet list of changes>
+
+## Modules affected
+- ManageEngine.ServiceDesk.OnPrem.Core — x.y.z → x.y.z+1
+- ManageEngine.ServiceDesk.OnPrem.Requests — unchanged
+
+## Testing
+<what was run and what passed>
+```
+
+## Versioning
+
+Each module versions independently via its `.psd1` `ModuleVersion` field. Follow [Semantic Versioning](https://semver.org/):
+
+| Change type | Version component |
+|---|---|
+| Breaking change to a public cmdlet or type | Major (`x.0.0`) |
+| New public cmdlet or parameter | Minor (`0.x.0`) |
+| Bug fix, docs, internal refactor | Patch (`0.0.x`) |
+
+Rules for keeping versions consistent:
+
+- When a sub-module version bumps, update the `RequiredModules` minimum version in every `.psd1` that depends on it.
+- Bump the umbrella module (`ManageEngine.ServiceDesk.OnPrem`) version whenever any sub-module version changes, so that `Install-Module ManageEngine.ServiceDesk.OnPrem` always pulls the correct dependency versions.
+- Version bumps are part of the same PR as the change — do not use a separate "version bump" PR.
+
+## Tagging
+
+Tags are created after a PR is merged to `main`. Because modules version independently, each release gets its own tag scoped to the module name:
+
+```
+ManageEngine.ServiceDesk.OnPrem/v0.2.1
+ManageEngine.ServiceDesk.OnPrem.Core/v0.2.0
+ManageEngine.ServiceDesk.OnPrem.Requests/v0.2.0
+```
+
+### Creating a release tag
+
+```bash
+# After merging to main, pull the latest
+git checkout main
+git pull
+
+# Tag only the module(s) whose version changed
+git tag ManageEngine.ServiceDesk.OnPrem.Core/v0.2.1
+git tag ManageEngine.ServiceDesk.OnPrem/v0.2.2   # umbrella always gets a new tag too
+
+# Push tags
+git push origin ManageEngine.ServiceDesk.OnPrem.Core/v0.2.1
+git push origin ManageEngine.ServiceDesk.OnPrem/v0.2.2
+```
+
+Tag only the modules whose `ModuleVersion` actually changed in the merged PR. Modules that were not touched do not receive a new tag.
+
+### Finding the tag for a given module version
+
+```bash
+git tag --list 'ManageEngine.ServiceDesk.OnPrem.Core/*'
+git tag --list 'ManageEngine.ServiceDesk.OnPrem.Requests/*'
+```
