@@ -6,7 +6,7 @@ param(
     [string]$Task = 'All',
 
     [Parameter()]
-    [ValidateSet('Core', 'Requests', 'All')]
+    [ValidateSet('Core', 'Requests', 'Changes', 'All')]
     [string]$Module = 'All',
 
     [Parameter()]
@@ -23,12 +23,14 @@ $distDir    = Join-Path $repoRoot 'dist'
 $allModules = @(
     'ManageEngine.ServiceDesk.OnPrem.Core'
     'ManageEngine.ServiceDesk.OnPrem.Requests'
+    'ManageEngine.ServiceDesk.OnPrem.Changes'
     'ManageEngine.ServiceDesk.OnPrem'
 )
 
 $targetModules = switch ($Module) {
     'Core'     { @('ManageEngine.ServiceDesk.OnPrem.Core') }
     'Requests' { @('ManageEngine.ServiceDesk.OnPrem.Core', 'ManageEngine.ServiceDesk.OnPrem.Requests') }
+    'Changes'  { @('ManageEngine.ServiceDesk.OnPrem.Core', 'ManageEngine.ServiceDesk.OnPrem.Changes') }
     'All'      { $allModules }
 }
 
@@ -91,7 +93,10 @@ function Invoke-BuildTest {
 }
 
 function Invoke-BuildIntegrationTest {
-    param([switch]$SkipCertificateCheck)
+    param(
+        [string[]]$Modules,
+        [switch]$SkipCertificateCheck
+    )
 
     Write-Host '[IntegrationTest] Running integration tests...' -ForegroundColor Cyan
 
@@ -101,8 +106,26 @@ function Invoke-BuildIntegrationTest {
 
     $env:SDP_SKIP_CERTIFICATE_CHECK = if ($SkipCertificateCheck) { '1' } else { '' }
 
+    $integrationDir = Join-Path $testsDir 'Integration'
+    $moduleTestMap  = @{
+        'ManageEngine.ServiceDesk.OnPrem.Requests' = Join-Path $integrationDir 'SDPRequests.Integration.Tests.ps1'
+        'ManageEngine.ServiceDesk.OnPrem.Changes'  = Join-Path $integrationDir 'SDPChanges.Integration.Tests.ps1'
+    }
+
+    $testPaths = @(
+        $Modules |
+            Where-Object { $moduleTestMap.ContainsKey($_) } |
+            ForEach-Object { $moduleTestMap[$_] } |
+            Where-Object { Test-Path $_ }
+    )
+
+    if ($testPaths.Count -eq 0) {
+        Write-Host '[IntegrationTest] No integration tests found for the selected module(s).' -ForegroundColor Yellow
+        return
+    }
+
     $config = New-PesterConfiguration
-    $config.Run.Path         = $testsDir
+    $config.Run.Path         = $testPaths
     $config.Run.PassThru     = $true
     $config.Filter.Tag       = @('Integration')
     $config.Output.Verbosity = 'Detailed'
@@ -138,7 +161,7 @@ function Invoke-BuildPackage {
 switch ($Task) {
     'Docs'            { Invoke-BuildDocs -Modules $targetModules }
     'Test'            { Invoke-BuildTest }
-    'IntegrationTest' { Invoke-BuildIntegrationTest -SkipCertificateCheck:$SkipCertificateCheck }
+    'IntegrationTest' { Invoke-BuildIntegrationTest -Modules $targetModules -SkipCertificateCheck:$SkipCertificateCheck }
     'Package'         { Invoke-BuildPackage -Modules $targetModules }
     'All' {
         Invoke-BuildDocs -Modules $targetModules

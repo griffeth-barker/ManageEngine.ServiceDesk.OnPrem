@@ -15,7 +15,7 @@ A PowerShell module family for the [ManageEngine ServiceDesk Plus On-Prem](https
 | `ManageEngine.ServiceDesk.OnPrem` | Umbrella — installs all sub-modules |
 | `ManageEngine.ServiceDesk.OnPrem.Core` | Authentication, session management, HTTP transport |
 | `ManageEngine.ServiceDesk.OnPrem.Requests` | Requests, notes, tasks, worklogs, resolutions, approvals |
-| `ManageEngine.ServiceDesk.OnPrem.Changes` | *Currently in development* |
+| `ManageEngine.ServiceDesk.OnPrem.Changes` | Changes, notes, tasks, worklogs, deployment schedules, associations, and change config types (CAB, roles, risks, etc.) |
 | `ManageEngine.ServiceDesk.OnPrem.Assets` | *Future* |
 | `ManageEngine.ServiceDesk.OnPrem.Cmdb` | *Future* |
 | `ManageEngine.ServiceDesk.OnPrem.Releases` | *Future* |
@@ -43,63 +43,17 @@ Import-Module ManageEngine.ServiceDesk.OnPrem.Requests
 
 ## Quick start
 
-You can bring your API key however you'd like, but I strongly recommend using the `Microsoft.Powershell.SecretManagement` or another secret managemet module to prevent secret leakage at the command line, especially in environments with PowerShell script block logging enabled.
-
 ```powershell
 $key = Get-Secret -Name 'SdpTechnicianKey'
 Connect-SDPService -BaseUri 'https://sdp.corp.local:8080' -TechnicianKey $key
 
-# List open requests
-Get-SDPRequest -Filter @(@{ field = 'status.name'; condition = 'eq'; value = 'Open' }) -All
-
-# Get a single request
 Get-SDPRequest -Id '12345'
+Get-SDPChange  -Id '12345'
 
-# Create a request
-New-SDPRequest -Subject 'Cannot access VPN' -RequesterName 'Jane Smith' -PriorityName 'High'
-
-# Update a request
-Set-SDPRequest -Id '12345' -TechnicianName 'Bob Jones' -StatusName 'In Progress'
-
-# Pipeline: close all resolved requests
-Get-SDPRequest -Filter @(@{ field = 'status.name'; condition = 'eq'; value = 'Resolved' }) -All |
-    Set-SDPRequest -StatusName 'Closed'
-
-# Add a note
-New-SDPRequestNote -RequestId '12345' -Description 'Escalated to Tier 2.' -ShowToRequester
-
-# Add a worklog
-New-SDPRequestWorklog -RequestId '12345' -TimeSpentHours '1' -TimeSpentMinutes '30' -Description 'Troubleshooting session'
-
-# Set a resolution
-New-SDPRequestResolution -RequestId '12345' -Content 'Reset credentials. Issue resolved.'
-
-# View and act on pending approvals
-Get-SDPApproval
-Approve-SDPApproval -RequestId '12345' -LevelNumber 1 -ApprovalId '1' -Comments 'Approved.'
-Deny-SDPApproval   -RequestId '12345' -LevelNumber 1 -ApprovalId '1' -Comments 'Missing justification.'
-
-# Disconnect
 Disconnect-SDPService
 ```
 
-## Multi-portal installs
-
-If your SDP instance hosts more than one portal, pass `-PortalId` when connecting:
-
-```powershell
-Connect-SDPService -BaseUri 'https://sdp.corp.local' -TechnicianKey $key -PortalId 2
-```
-
-The default portal ID is `1`.
-
-## Self-signed certificates
-
-Pass `-SkipCertificateCheck` to bypass SSL validation for instances with untrusted certificates:
-
-```powershell
-Connect-SDPService -BaseUri 'https://sdp.corp.local' -TechnicianKey $key -SkipCertificateCheck
-```
+See [EXAMPLES.md](EXAMPLES.md) for full usage examples across all modules.
 
 ## Documentation
 
