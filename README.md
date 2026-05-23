@@ -21,7 +21,7 @@ A PowerShell module family for the [ManageEngine ServiceDesk Plus On-Prem](https
 | `ManageEngine.ServiceDesk.OnPrem.Releases` | *Future* |
 | `ManageEngine.ServiceDesk.OnPrem.Problems` | *Future* |
 | `ManageEngine.ServiceDesk.OnPrem.Projects` | *Future* |
-| `ManageEngine.ServiceDesk.OnPrem.Admin` | *Future* |
+| `ManageEngine.ServiceDesk.OnPrem.Admin` | Announcements, categories, departments, impacts, items, levels, modes, users,reminders, and other various helpdesk configuration |
 
 Install the umbrella module to get everything:
 
