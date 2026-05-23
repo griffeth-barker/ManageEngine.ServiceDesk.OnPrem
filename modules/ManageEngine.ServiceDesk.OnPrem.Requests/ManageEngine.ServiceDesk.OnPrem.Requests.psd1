@@ -1,6 +1,6 @@
 @{
     RootModule        = 'ManageEngine.ServiceDesk.OnPrem.Requests.psm1'
-    ModuleVersion     = '0.2.0'
+    ModuleVersion     = '0.2.1'
     GUID              = '3c4d5e6f-7a8b-4910-a2b3-c4d5e6f7a8b9'
     Author            = 'Griffeth Barker (github@griff.systems)'
     CompanyName       = ''
