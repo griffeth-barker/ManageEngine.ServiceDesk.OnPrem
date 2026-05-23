@@ -45,13 +45,16 @@ Pass `-SkipCertificateCheck` for instances with self-signed certificates:
 | Variable | Purpose |
 |---|---|
 | `SDP_PORTAL_ID` | Portal ID — defaults to `1` |
-| `SDP_TEST_REQUEST_ID` | Existing request ID to use for single-record read tests |
+| `SDP_TEST_REQUEST_ID` | Existing request ID to use for single-record read tests (Requests) |
 | `SDP_TEST_REQUESTER_NAME` | Requester name to supply when creating test requests (set if your instance marks requester as mandatory) |
 | `SDP_TEST_CATEGORY_NAME` | Category name to supply when creating test requests (set if your instance marks category as mandatory) |
-| `SDP_TEST_PRIORITY_NAME` | Priority name to supply when creating test requests (set if your instance marks priority as mandatory) |
+| `SDP_TEST_PRIORITY_NAME` | Priority name to supply when creating test requests or changes (set if your instance marks priority as mandatory) |
 | `SDP_TEST_OWNER_NAME` | Technician name for worklog owner (set if your instance marks worklog owner as mandatory) |
+| `SDP_TEST_CHANGE_ID` | Existing change ID to use for single-record read tests (Changes) |
+| `SDP_TEST_CHANGE_TYPE_NAME` | Change type name to supply when creating test changes (set if your instance marks change type as mandatory) |
+| `SDP_TEST_TECHNICIAN_NAME` | Technician name to supply when creating test changes (set if your instance marks technician as mandatory) |
 
-The lifecycle tests (`Request lifecycle` describe block) call `New-SDPRequest` with only a subject and description by default. If your SDP instance enforces additional mandatory fields, the create step will fail with error code `4012`. Set the corresponding env vars above to satisfy those requirements.
+The lifecycle tests call `New-SDPRequest` / `New-SDPChange` with only the minimum required parameters by default. If your SDP instance enforces additional mandatory fields, the create step will fail with error code `4012`. Set the corresponding env vars above to satisfy those requirements.
 
 ## Repo layout
 
@@ -60,13 +63,18 @@ modules/
   ManageEngine.ServiceDesk.OnPrem/           # umbrella module
   ManageEngine.ServiceDesk.OnPrem.Core/      # auth, session, HTTP transport
   ManageEngine.ServiceDesk.OnPrem.Requests/  # requests, notes, tasks, worklogs, approvals
+  ManageEngine.ServiceDesk.OnPrem.Changes/   # changes, notes, tasks, worklogs, deployment schedules, associations
 docs/
   ManageEngine.ServiceDesk.OnPrem.Core/en-US/
   ManageEngine.ServiceDesk.OnPrem.Requests/en-US/
+  ManageEngine.ServiceDesk.OnPrem.Changes/en-US/
 tests/
   ManageEngine.ServiceDesk.OnPrem.Core.Tests.ps1
   ManageEngine.ServiceDesk.OnPrem.Requests.Tests.ps1
+  ManageEngine.ServiceDesk.OnPrem.Changes.Tests.ps1
   Integration/
+    SDPRequests.Integration.Tests.ps1
+    SDPChanges.Integration.Tests.ps1
 ```
 
 ## Adding a function to an existing module
