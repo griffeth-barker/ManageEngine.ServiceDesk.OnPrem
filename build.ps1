@@ -6,7 +6,7 @@ param(
     [string]$Task = 'All',
 
     [Parameter()]
-    [ValidateSet('Core', 'Requests', 'Changes', 'All')]
+    [ValidateSet('Core', 'Requests', 'Changes', 'Admin', 'All')]
     [string]$Module = 'All',
 
     [Parameter()]
@@ -24,6 +24,7 @@ $allModules = @(
     'ManageEngine.ServiceDesk.OnPrem.Core'
     'ManageEngine.ServiceDesk.OnPrem.Requests'
     'ManageEngine.ServiceDesk.OnPrem.Changes'
+    'ManageEngine.ServiceDesk.OnPrem.Admin'
     'ManageEngine.ServiceDesk.OnPrem'
 )
 
@@ -31,6 +32,7 @@ $targetModules = switch ($Module) {
     'Core'     { @('ManageEngine.ServiceDesk.OnPrem.Core') }
     'Requests' { @('ManageEngine.ServiceDesk.OnPrem.Core', 'ManageEngine.ServiceDesk.OnPrem.Requests') }
     'Changes'  { @('ManageEngine.ServiceDesk.OnPrem.Core', 'ManageEngine.ServiceDesk.OnPrem.Changes') }
+    'Admin'    { @('ManageEngine.ServiceDesk.OnPrem.Core', 'ManageEngine.ServiceDesk.OnPrem.Admin') }
     'All'      { $allModules }
 }
 
@@ -110,6 +112,7 @@ function Invoke-BuildIntegrationTest {
     $moduleTestMap  = @{
         'ManageEngine.ServiceDesk.OnPrem.Requests' = Join-Path $integrationDir 'SDPRequests.Integration.Tests.ps1'
         'ManageEngine.ServiceDesk.OnPrem.Changes'  = Join-Path $integrationDir 'SDPChanges.Integration.Tests.ps1'
+        'ManageEngine.ServiceDesk.OnPrem.Admin'    = Join-Path $integrationDir 'SDPAdmin.Integration.Tests.ps1'
     }
 
     $testPaths = @(

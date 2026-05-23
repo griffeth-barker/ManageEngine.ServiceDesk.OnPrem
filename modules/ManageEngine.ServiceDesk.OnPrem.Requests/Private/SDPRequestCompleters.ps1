@@ -13,6 +13,7 @@ $sdpCompleters = @(
     @{ Parameter = 'GroupName';       Endpoint = 'support_groups'; Key = 'support_groups'; Commands = @('New-SDPRequest', 'Set-SDPRequest', 'New-SDPRequestTask', 'Set-SDPRequestTask') }
     @{ Parameter = 'TechnicianName';  Endpoint = 'technicians';    Key = 'technicians';    Commands = @('New-SDPRequest', 'Set-SDPRequest') }
     @{ Parameter = 'OwnerName';       Endpoint = 'technicians';    Key = 'technicians';    Commands = @('New-SDPRequestTask', 'Set-SDPRequestTask', 'New-SDPRequestWorklog', 'Set-SDPRequestWorklog') }
+    @{ Parameter = 'RequesterName';   Endpoint = 'orgusers';       Key = 'orgusers';       Commands = @('New-SDPRequest', 'Set-SDPRequest') }
 )
 
 foreach ($completer in $sdpCompleters) {
