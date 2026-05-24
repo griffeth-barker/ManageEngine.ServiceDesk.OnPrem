@@ -4,3 +4,4 @@ CLAUDE.md
 *.json
 *.xml
 *.zip
+dist/*
