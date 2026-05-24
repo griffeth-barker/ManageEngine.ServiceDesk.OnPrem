@@ -19,7 +19,7 @@ A PowerShell module family for the [ManageEngine ServiceDesk Plus On-Prem](https
 | `ManageEngine.ServiceDesk.OnPrem.Assets` | *Future* |
 | `ManageEngine.ServiceDesk.OnPrem.Cmdb` | *Future* |
 | `ManageEngine.ServiceDesk.OnPrem.Releases` | *Future* |
-| `ManageEngine.ServiceDesk.OnPrem.Problems` | *Future* |
+| `ManageEngine.ServiceDesk.OnPrem.Problems` | Problems, dependencies, notes, tasks, assignments, worklogs, etc. |
 | `ManageEngine.ServiceDesk.OnPrem.Projects` | *Future* |
 | `ManageEngine.ServiceDesk.OnPrem.Admin` | Announcements, categories, departments, impacts, items, levels, modes, users,reminders, and other various helpdesk configuration |
 
