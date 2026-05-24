@@ -1,6 +1,10 @@
 BeforeAll {
-    $modulePath = Join-Path $PSScriptRoot '..' 'modules' 'ManageEngine.ServiceDesk.OnPrem.Changes'
-    Import-Module $modulePath -Force -ErrorAction Stop
+    $repoRoot        = Split-Path $PSScriptRoot -Parent
+    $coreManifest    = Join-Path $repoRoot 'modules' 'ManageEngine.ServiceDesk.OnPrem.Core'    'ManageEngine.ServiceDesk.OnPrem.Core.psd1'
+    $changesManifest = Join-Path $repoRoot 'modules' 'ManageEngine.ServiceDesk.OnPrem.Changes' 'ManageEngine.ServiceDesk.OnPrem.Changes.psd1'
+
+    Import-Module $coreManifest    -Force -ErrorAction Stop
+    Import-Module $changesManifest -Force -ErrorAction Stop
 }
 
 Describe 'Module structure' {
