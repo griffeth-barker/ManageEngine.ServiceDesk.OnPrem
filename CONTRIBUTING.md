@@ -144,7 +144,7 @@ Use `[All]` when the change spans more than one module.
 
 ### Checklist before opening a PR
 
-1. Run `./build.ps1` (all tasks pass)
+1. Run `./build.ps1` (all tasks pass) — unit tests are also enforced automatically by CI
 2. New public functions have comment-based help and at least one Pester unit test
 3. Version numbers bumped as needed (see **Versioning** below)
 4. `RequiredModules` constraints updated in any dependent `.psd1` files if a sub-module version changed
@@ -163,6 +163,27 @@ Use `[All]` when the change spans more than one module.
 ## Testing
 <what was run and what passed>
 ```
+
+## GitHub Actions
+
+Two workflows run automatically — no manual steps are required after opening or merging a PR.
+
+### CI (`ci.yml`)
+
+Runs on every pull request targeting `main`. Installs prerequisites and executes `./build.ps1 -Task Test`. The PR is blocked from merging if any unit test fails. Test results are uploaded as a workflow artifact on every run, including failures.
+
+### Release (`release.yml`)
+
+Runs on every push to `main` (i.e., after a PR is merged). For each module whose `.psd1` `ModuleVersion` differs from the previous commit, the workflow:
+
+1. Builds distribution packages via `./build.ps1 -Task Package`
+2. Creates a scoped git tag (`ManageEngine.ServiceDesk.OnPrem.Core/vX.Y.Z`)
+3. Publishes a GitHub release with the module zip attached
+4. Publishes the module to the PowerShell Gallery
+
+Modules are processed in dependency order (Core first, then sub-modules, then the umbrella) so that PSGallery `RequiredModules` constraints are satisfied. If no `.psd1` versions changed the workflow exits early without creating any tags or releases.
+
+> **You do not need to manually create tags, push to PSGallery, or create GitHub releases.** Bumping `ModuleVersion` in the relevant `.psd1` files as part of your PR is the only trigger needed.
 
 ## Versioning
 
@@ -189,24 +210,6 @@ ManageEngine.ServiceDesk.OnPrem/v0.2.1
 ManageEngine.ServiceDesk.OnPrem.Core/v0.2.0
 ManageEngine.ServiceDesk.OnPrem.Requests/v0.2.0
 ```
-
-### Creating a release tag
-
-```bash
-# After merging to main, pull the latest
-git checkout main
-git pull
-
-# Tag only the module(s) whose version changed
-git tag ManageEngine.ServiceDesk.OnPrem.Core/v0.2.1
-git tag ManageEngine.ServiceDesk.OnPrem/v0.2.2   # umbrella always gets a new tag too
-
-# Push tags
-git push origin ManageEngine.ServiceDesk.OnPrem.Core/v0.2.1
-git push origin ManageEngine.ServiceDesk.OnPrem/v0.2.2
-```
-
-Tag only the modules whose `ModuleVersion` actually changed in the merged PR. Modules that were not touched do not receive a new tag.
 
 ### Finding the tag for a given module version
 

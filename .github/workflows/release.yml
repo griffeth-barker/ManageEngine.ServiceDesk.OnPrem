@@ -1,0 +1,129 @@
+name: Release
+
+on:
+  push:
+    branches: [main]
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    env:
+      GH_TOKEN: ${{ github.token }}
+
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 2
+
+      - name: Detect version bumps
+        id: detect
+        shell: pwsh
+        run: |
+          $allModules = @(
+            'ManageEngine.ServiceDesk.OnPrem.Core'
+            'ManageEngine.ServiceDesk.OnPrem.Requests'
+            'ManageEngine.ServiceDesk.OnPrem.Changes'
+            'ManageEngine.ServiceDesk.OnPrem.Admin'
+            'ManageEngine.ServiceDesk.OnPrem.Problems'
+            'ManageEngine.ServiceDesk.OnPrem'
+          )
+
+          $changed = [System.Collections.Generic.List[pscustomobject]]::new()
+
+          foreach ($mod in $allModules) {
+            $psd1     = "modules/$mod/$mod.psd1"
+            $current  = (Import-PowerShellDataFile $psd1).ModuleVersion
+
+            $prevRaw  = git show HEAD~1:$psd1 2>&1
+            if ($LASTEXITCODE -ne 0) {
+              # New module — treat as changed
+              $changed.Add([pscustomobject]@{ name = $mod; version = $current })
+              continue
+            }
+
+            $tmp = [System.IO.Path]::ChangeExtension([System.IO.Path]::GetTempFileName(), 'psd1')
+            $prevRaw | Set-Content $tmp
+            $previous = (Import-PowerShellDataFile $tmp).ModuleVersion
+            Remove-Item $tmp
+
+            if ($current -ne $previous) {
+              $changed.Add([pscustomobject]@{ name = $mod; version = $current })
+            }
+          }
+
+          if ($changed.Count -eq 0) {
+            Write-Host 'No module version changes detected — skipping release.'
+            "changed=false" | Out-File -Append $env:GITHUB_OUTPUT
+          } else {
+            Write-Host "Changed modules: $($changed.name -join ', ')"
+            "changed=true" | Out-File -Append $env:GITHUB_OUTPUT
+            $json = ConvertTo-Json -InputObject @($changed) -Compress
+            "modules=$json" | Out-File -Append $env:GITHUB_OUTPUT
+          }
+
+      - name: Install prerequisites
+        if: steps.detect.outputs.changed == 'true'
+        shell: pwsh
+        run: |
+          Set-PSRepository PSGallery -InstallationPolicy Trusted
+          Install-Module platyPS -Scope CurrentUser -Force
+          Install-Module Pester  -Scope CurrentUser -Force
+
+      - name: Build packages
+        if: steps.detect.outputs.changed == 'true'
+        shell: pwsh
+        run: ./build.ps1 -Task Package
+
+      - name: Create tags and GitHub releases
+        if: steps.detect.outputs.changed == 'true'
+        shell: pwsh
+        env:
+          CHANGED_MODULES: ${{ steps.detect.outputs.modules }}
+        run: |
+          $changed = $env:CHANGED_MODULES | ConvertFrom-Json
+
+          foreach ($mod in $changed) {
+            $tag = "$($mod.name)/v$($mod.version)"
+            $zip = "dist/$($mod.name).$($mod.version).zip"
+
+            git tag $tag
+            git push origin $tag
+
+            gh release create $tag $zip `
+              --title "$($mod.name) v$($mod.version)" `
+              --generate-notes
+          }
+
+      - name: Publish to PowerShell Gallery
+        if: steps.detect.outputs.changed == 'true'
+        shell: pwsh
+        env:
+          CHANGED_MODULES: ${{ steps.detect.outputs.modules }}
+          PSGALLERY_API_KEY: ${{ secrets.PSGALLERY_API_KEY }}
+        run: |
+          $changed = $env:CHANGED_MODULES | ConvertFrom-Json
+          Set-PSRepository PSGallery -InstallationPolicy Trusted
+
+          $corePublished = $false
+
+          foreach ($mod in $changed) {
+            # PSGallery can take time to index a newly published module. Sub-modules declare
+            # a minimum Core version in RequiredModules; if Core just published in this same
+            # run, wait for it to be indexed before publishing dependents.
+            if ($corePublished -and $mod.name -ne 'ManageEngine.ServiceDesk.OnPrem.Core') {
+              Write-Host 'Waiting 90s for PSGallery to index Core...'
+              Start-Sleep -Seconds 90
+              $corePublished = $false
+            }
+
+            $path = "modules/$($mod.name)"
+            Write-Host "Publishing $($mod.name) v$($mod.version) to PSGallery..."
+            Publish-Module -Path $path -NuGetApiKey $env:PSGALLERY_API_KEY -Repository PSGallery -Force
+
+            if ($mod.name -eq 'ManageEngine.ServiceDesk.OnPrem.Core') {
+              $corePublished = $true
+            }
+          }
