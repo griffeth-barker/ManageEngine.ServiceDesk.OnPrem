@@ -104,6 +104,11 @@ jobs:
           CHANGED_MODULES: ${{ steps.detect.outputs.modules }}
           PSGALLERY_API_KEY: ${{ secrets.PSGALLERY_API_KEY }}
         run: |
+          # Publish-Module validates RequiredModules via Test-ModuleManifest against the local
+          # PSModulePath. Add the repo's modules directory so submodules resolve without
+          # needing to be installed from PSGallery first.
+          $env:PSModulePath = (Join-Path $PWD 'modules') + [System.IO.Path]::PathSeparator + $env:PSModulePath
+
           $changed = $env:CHANGED_MODULES | ConvertFrom-Json
           Set-PSRepository PSGallery -InstallationPolicy Trusted
 
