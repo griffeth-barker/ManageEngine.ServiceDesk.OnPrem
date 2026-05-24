@@ -107,23 +107,33 @@ jobs:
           $changed = $env:CHANGED_MODULES | ConvertFrom-Json
           Set-PSRepository PSGallery -InstallationPolicy Trusted
 
-          $corePublished = $false
+          $corePublished      = $false
+          $submodulePublished = $false
 
           foreach ($mod in $changed) {
-            # PSGallery can take time to index a newly published module. Sub-modules declare
-            # a minimum Core version in RequiredModules; if Core just published in this same
-            # run, wait for it to be indexed before publishing dependents.
-            if ($corePublished -and $mod.name -ne 'ManageEngine.ServiceDesk.OnPrem.Core') {
+            $isUmbrella = $mod.name -eq 'ManageEngine.ServiceDesk.OnPrem'
+            $isCore     = $mod.name -eq 'ManageEngine.ServiceDesk.OnPrem.Core'
+            $waited     = $false
+
+            # Sub-modules declare RequiredModules on Core; wait for it to index before publishing them.
+            if ($corePublished -and -not $isCore) {
               Write-Host 'Waiting 90s for PSGallery to index Core...'
               Start-Sleep -Seconds 90
               $corePublished = $false
+              $waited = $true
+            }
+
+            # The umbrella declares RequiredModules on all sub-modules; wait if any published
+            # this run and we haven't already waited above.
+            if ($isUmbrella -and $submodulePublished -and -not $waited) {
+              Write-Host 'Waiting 90s for PSGallery to index submodules...'
+              Start-Sleep -Seconds 90
             }
 
             $path = "modules/$($mod.name)"
             Write-Host "Publishing $($mod.name) v$($mod.version) to PSGallery..."
             Publish-Module -Path $path -NuGetApiKey $env:PSGALLERY_API_KEY -Repository PSGallery -Force
 
-            if ($mod.name -eq 'ManageEngine.ServiceDesk.OnPrem.Core') {
-              $corePublished = $true
-            }
+            if ($isCore)     { $corePublished = $true }
+            if (-not $isUmbrella) { $submodulePublished = $true }
           }
