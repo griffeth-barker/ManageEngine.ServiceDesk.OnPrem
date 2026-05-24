@@ -57,6 +57,7 @@ Describe 'Module structure' {
             'Set-SDPProblemTaskComment'
             'Set-SDPProblemTaskWorklog'
             'Set-SDPProblemTemplate'
+            'Set-SDPProblemWorklog'
         ) | Sort-Object
         $exported | Should -Be $expected
     }
