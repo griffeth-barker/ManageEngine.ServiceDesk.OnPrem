@@ -25,7 +25,7 @@ A PowerShell module family for the [ManageEngine ServiceDesk Plus On-Prem](https
 
 Install the umbrella module to get everything:  
 
-[![PSGallery Version](https://img.shields.io/powershellgallery/v/ManageEngine.ServiceDesk.OnPrem.png?style=for-the-badge&label=PowerShell%20Gallery)](https://www.powershellgallery.com/packages/ManageEngine.ServiceDesk.OnPrem/0.1.2/) [![PSGallery Downloads](https://img.shields.io/powershellgallery/dt/ManageEngine.ServiceDesk.OnPrem.png?style=for-the-badge&label=Downloads)](https://www.powershellgallery.com/packages/ManageEngine.ServiceDesk.OnPrem/0.1.2/)  
+[![PSGallery Version](https://img.shields.io/powershellgallery/v/ManageEngine.ServiceDesk.OnPrem.png?style=for-the-badge&label=PowerShell%20Gallery)](https://www.powershellgallery.com/packages/ManageEngine.ServiceDesk.OnPrem/) [![PSGallery Downloads](https://img.shields.io/powershellgallery/dt/ManageEngine.ServiceDesk.OnPrem.png?style=for-the-badge&label=Downloads)](https://www.powershellgallery.com/packages/ManageEngine.ServiceDesk.OnPrem/)  
 
 ```powershell
 Install-PSResource -Name 'ManageEngine.ServiceDesk.OnPrem' -Repository PSGallery
