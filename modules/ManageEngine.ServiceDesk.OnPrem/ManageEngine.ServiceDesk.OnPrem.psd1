@@ -8,6 +8,14 @@
     Description       = 'Umbrella module for the ManageEngine ServiceDesk Plus on-premises PowerShell module family. Installing this module installs all sub-modules. Import individual sub-modules (e.g. ManageEngine.ServiceDesk.OnPrem.Requests) to load only what you need.'
     PowerShellVersion = '7.0'
 
+    RequiredModules = @(
+        @{ ModuleName = 'ManageEngine.ServiceDesk.OnPrem.Core';     ModuleVersion = '0.2.0' }
+        @{ ModuleName = 'ManageEngine.ServiceDesk.OnPrem.Requests'; ModuleVersion = '0.2.1' }
+        @{ ModuleName = 'ManageEngine.ServiceDesk.OnPrem.Changes';  ModuleVersion = '0.1.0' }
+        @{ ModuleName = 'ManageEngine.ServiceDesk.OnPrem.Admin';    ModuleVersion = '0.1.0' }
+        @{ ModuleName = 'ManageEngine.ServiceDesk.OnPrem.Problems'; ModuleVersion = '0.1.0' }
+    )
+
     FunctionsToExport = @()
     CmdletsToExport   = @()
     VariablesToExport = @()
