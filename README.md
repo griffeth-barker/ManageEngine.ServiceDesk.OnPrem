@@ -23,8 +23,9 @@ A PowerShell module family for the [ManageEngine ServiceDesk Plus On-Prem](https
 | `ManageEngine.ServiceDesk.OnPrem.Projects` | *Future* |
 | `ManageEngine.ServiceDesk.OnPrem.Admin` | Announcements, categories, departments, impacts, items, levels, modes, users,reminders, and other various helpdesk configuration |
 
-Install the umbrella module to get everything:
-[![PSGallery Version](https://img.shields.io/powershellgallery/v/ManageEngine.ServiceDesk.OnPrem.png?style=for-the-badge&label=PowerShell%20Gallery)](https://www.powershellgallery.com/packages/ManageEngine.ServiceDesk.OnPrem/0.1.2/) [![PSGallery Downloads](https://img.shields.io/powershellgallery/dt/ManageEngine.ServiceDesk.OnPrem.png?style=for-the-badge&label=Downloads)](https://www.powershellgallery.com/packages/ManageEngine.ServiceDesk.OnPrem/0.1.2/)
+Install the umbrella module to get everything:  
+
+[![PSGallery Version](https://img.shields.io/powershellgallery/v/ManageEngine.ServiceDesk.OnPrem.png?style=for-the-badge&label=PowerShell%20Gallery)](https://www.powershellgallery.com/packages/ManageEngine.ServiceDesk.OnPrem/0.1.2/) [![PSGallery Downloads](https://img.shields.io/powershellgallery/dt/ManageEngine.ServiceDesk.OnPrem.png?style=for-the-badge&label=Downloads)](https://www.powershellgallery.com/packages/ManageEngine.ServiceDesk.OnPrem/0.1.2/)  
 
 ```powershell
 Install-PSResource -Name 'ManageEngine.ServiceDesk.OnPrem' -Repository PSGallery
